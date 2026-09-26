@@ -32,16 +32,18 @@ pipeline {
         }
         stage('部署到应用服务器') {
             steps {
-                sh """
-                ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${APP_HOST} "
-                docker login ${HARBOR_ADDR} -u ${HARBOR_CREDS_USR} -p ${HARBOR_CREDS_PSW};
-                docker stop nginx-cicd-demo || true;
-                docker rm nginx-cicd-demo || true;
-                docker pull ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG};
-                docker run -d --name nginx-cicd-demo -p 80:80 ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG};
-                docker logout ${HARBOR_ADDR}
-                "
-                """
+                sshagent(['ssh-deploy']) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${APP_HOST} "
+                    docker login ${HARBOR_ADDR} -u ${HARBOR_CREDS_USR} -p ${HARBOR_CREDS_PSW};
+                    docker stop nginx-cicd-demo || true;
+                    docker rm nginx-cicd-demo || true;
+                    docker pull ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG};
+                    docker run -d --name nginx-cicd-demo -p 80:80 ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG};
+                    docker logout ${HARBOR_ADDR}
+                    "
+                    """
+                }
             }
         }
     }
