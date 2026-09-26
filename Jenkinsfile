@@ -14,6 +14,7 @@ pipeline {
                 checkout scm
             }
         }
+
         stage('构建镜像') {
             steps {
                 sh """
@@ -21,6 +22,7 @@ pipeline {
                 """
             }
         }
+
         stage('推送到Harbor') {
             steps {
                 sh """
@@ -30,19 +32,23 @@ pipeline {
                 """
             }
         }
+
         stage('部署到应用服务器') {
             steps {
                 sh """
                 sshpass -p '24W_WrM7?SAwSL@Q' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${APP_HOST} "
-                docker login ${HARBOR_ADDR} -u ${HARBOR_CREDS_USR} -p ${HARBOR_CREDS_PSW};
-                docker stop nginx-cicd-demo || true;
-                docker rm nginx-cicd-demo || true;
+                docker stop nginx-cicd-demo 2>/dev/null || true;
+                docker rm nginx-cicd-demo 2>/dev/null || true;
                 docker pull ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG};
-                docker run -d --name nginx-cicd-demo -p 80:80 ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG};
-                docker logout ${HARBOR_ADDR}
+                docker run -d --name nginx-cicd-demo -p 80:80 ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} sh -c 'echo \"pid /tmp/nginx.pid;\" > /etc/nginx/conf.d/pid.conf && exec nginx -g \"daemon off;\"';
                 "
                 """
             }
+        }
+    }
+    post {
+        always {
+            echo "流水线执行完成，镜像版本号：${IMAGE_TAG}"
         }
     }
 }
