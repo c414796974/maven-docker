@@ -61,6 +61,7 @@ docker pull ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
 
 docker run -d \
   --name nginx-cicd-demo \
+  --security-opt seccomp=unconfined \
   -p 80:80 \
   ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG}
 
