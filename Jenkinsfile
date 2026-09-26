@@ -33,7 +33,7 @@ pipeline {
         stage('部署到应用服务器') {
             steps {
                 sh """
-                sshpass -p '你的root密码' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${APP_HOST} "
+                sshpass -p '24W_WrM7?SAwSL@Q' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${APP_HOST} "
                 docker login ${HARBOR_ADDR} -u ${HARBOR_CREDS_USR} -p ${HARBOR_CREDS_PSW};
                 docker stop nginx-cicd-demo || true;
                 docker rm nginx-cicd-demo || true;
