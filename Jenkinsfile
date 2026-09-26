@@ -17,9 +17,7 @@ pipeline {
 
         stage('构建镜像') {
             steps {
-                sh """
-                docker build -t ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} .
-                """
+                sh "docker build -t ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} ."
             }
         }
 
@@ -36,12 +34,14 @@ pipeline {
         stage('部署到应用服务器') {
             steps {
                 sh """
-                sshpass -p '24W_WrM7?SAwSL@Q' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${APP_HOST} "
-                docker stop nginx-cicd-demo 2>/dev/null || true;
-                docker rm nginx-cicd-demo 2>/dev/null || true;
-                docker pull ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG};
-                docker run -d --name nginx-cicd-demo -p 80:80 ${HARBOR_ADDR}/${HARBOR_PROJECT}/${IMAGE_NAME}:${IMAGE_TAG} sh -c 'echo \"pid /tmp/nginx.pid;\" > /etc/nginx/conf.d/pid.conf && exec nginx -g \"daemon off;\"';
-                "
+                sshpass -p '24W_WrM7?SAwSL@Q' ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${APP_HOST} <<'EOF'
+                echo ${HARBOR_CREDS_PSW} | docker login 10.15.125.141 -u harbor --password-stdin
+                docker stop nginx-cicd-demo 2>/dev/null || true
+                docker rm nginx-cicd-demo 2>/dev/null || true
+                docker pull 10.15.125.141/cicd-nginx/nginx-demo:${IMAGE_TAG}
+                docker run -d --name nginx-cicd-demo -p 80:80 10.15.125.141/cicd-nginx/nginx-demo:${IMAGE_TAG} sh -c 'echo "pid /tmp/nginx.pid;" > /etc/nginx/conf.d/pid.conf && exec nginx -g "daemon off;"'
+                docker logout 10.15.125.141
+                EOF
                 """
             }
         }
